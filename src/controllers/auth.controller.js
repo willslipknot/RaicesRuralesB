@@ -42,11 +42,8 @@ export const register = async (req, res) => {
     }
 
     console.log("Usuario creado");
-
-    // Generar token de acceso
-    const token = jwt.sign({ id: newUser.id }, TOKEN_SECRET);
     
-    res.json({ message: "Usuario creado correctamente", token });
+    res.json({ message: "Usuario creado correctamente"});
   } catch (error) {
     console.error(error);
     res.status(500).json(["Error al registrar usuario."]);
@@ -77,21 +74,19 @@ export const login = async (req, res) => {
 
     if (!passwordMatch) {
       console.log("Contraseña incorrecta.");
-      return res.status(401).json(["Contraseña incorrecta."]);
+      return res.status(402).json(["Contraseña incorrecta."]);
     }
 
-    // Generar token de acceso
     const token = jwt.sign({ id: existingUser.id }, TOKEN_SECRET);
 
-    // Guardar el token en localStorage
-    localStorage.setItem('token', token);
-
+    // Responder con los datos del usuario y el token
     res.json({
       nombre: existingUser.nombre,
       apellido: existingUser.apellido,
       correo: existingUser.correo,
       telefono: existingUser.telefono,
       username: existingUser.username,
+      token
     });
 
   } catch (error) {
@@ -100,56 +95,50 @@ export const login = async (req, res) => {
   }
 };
 
-
 export const logout = async (req, res) => {
-  res.clearCookie('token');
   return res.sendStatus(200);
 };
 
 export const profile = async (req, res) => {
-  const token = req.cookies.token;
+  const token = req.headers.authorization;
 
   if (!token) {
     return res.status(401).json({ message: "Sin autorizacion" });
   }
 
-  jwt.verify(token, TOKEN_SECRET, async (err, decoded) => {
-    if (err) {
-      return res.status(401).json({ message: "Sin autorizacion" });
+  try {
+    const decoded = jwt.verify(token, TOKEN_SECRET);
+    
+    // Obtener información del usuario desde Supabase
+    const { data: user, error } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', decoded.id)
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
     }
 
-    try {
-      // Obtener información del usuario desde Supabase
-      const { data: user, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('id', decoded.id)
-        .single();
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (!user) {
-        return res.status(400).json({ message: "Usuario no encontrado" });
-      }
-
-      // Enviar información del usuario al cliente
-      res.json({
-        id: user.id,
-        username: user.username,
-        nombre: user.nombre,
-        apellido: user.apellido,
-        correo: user.correo,
-        telefono: user.telefono,
-        tipoUser: user.tipoUser,
-      });
-
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Error interno del servidor" });
+    if (!user) {
+      return res.status(400).json({ message: "Usuario no encontrado" });
     }
-  });
+
+    // Enviar información del usuario al cliente
+    res.json({
+      id: user.id,
+      username: user.username,
+      nombre: user.nombre,
+      apellido: user.apellido,
+      correo: user.correo,
+      telefono: user.telefono,
+      tipoUser: user.tipoUser,
+    });
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
 };
 
 export const putUser = async (req, res) => {
@@ -171,38 +160,34 @@ export const putUser = async (req, res) => {
 }
 
 export const verifyToken = async (req, res) => {
-  const token = req.cookies.token;
-
+  const token = req.headers.authorization;
+  console.log(token);
   if (!token) {
     return res.status(401).json({ message: "Sin autorizacion" });
   }
 
-  jwt.verify(token, TOKEN_SECRET, async (err, user) => {
-    if (err) {
+  try {
+    const decoded = jwt.verify(token, TOKEN_SECRET);
+
+    // Buscar al usuario en Supabase
+    const { data: userFound, error } = await supabase
+      .from('usuarios')
+      .select('id, username, correo, telefono, nombre, apellido, tipoUser')
+      .eq('id', decoded.id)
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!userFound) {
       return res.status(401).json({ message: "Sin autorizacion" });
     }
 
-    try {
-      // Buscar al usuario en Supabase
-      const { data: userFound, error } = await supabase
-        .from('usuarios')
-        .select('id, username, correo, telefono, nombre, apellido, tipoUser')
-        .eq('id', user.id)
-        .single();
+    return res.json(userFound);
 
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      if (!userFound) {
-        return res.status(401).json({ message: "Sin autorizacion" });
-      }
-
-      return res.json(userFound);
-
-    } catch (error) {
-      console.error(error);
-      return res.status(500).json({ message: "Error interno del servidor" });
-    }
-  });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
 };
