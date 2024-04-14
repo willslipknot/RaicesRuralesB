@@ -1,6 +1,4 @@
 import express from "express";
-import path from "path";
-import { fileURLToPath } from 'url'; // Importa la función fileURLToPath
 import morgan from "morgan";
 import authRoutes from './routes/auth.routes.js';
 import actRoutes from './routes/rutas.routes.js';
@@ -16,18 +14,18 @@ const allowedOrigins = [
     'https://raices-ashy.vercel.app',
     'http://localhost:5173',
     'https://raicesruralesf-4d6i.onrender.com'
-];
+  ];
 
-app.use(cors({
+  app.use(cors({
     origin: function(origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     },
     credentials: true,
-}));
+  }));
 
 app.use(express.json({ limit: '50mb' }));
 app.use(morgan('dev'));
@@ -39,17 +37,5 @@ app.use(condRoutes);
 app.use(vehiculoRoutes);
 app.use(ReservasRoutes);
 
-// Convierte la URL del archivo actual a una ruta de archivo
-const __filename = fileURLToPath(import.meta.url);
-// Obtén el directorio del archivo actual
-const __dirname = path.dirname(__filename);
-
-// Ruta para servir archivos estáticos de React
-app.use(express.static(path.join(__dirname, '../client/build')));
-
-// Ruta de fallback para cualquier otra solicitud, sirve el archivo index.html de React
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
-});
 
 export default app;
