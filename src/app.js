@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import { fileURLToPath } from 'url'; // Importa la función fileURLToPath
 import morgan from "morgan";
 import authRoutes from './routes/auth.routes.js';
 import actRoutes from './routes/rutas.routes.js';
@@ -37,6 +38,11 @@ app.use(actRoutes);
 app.use(condRoutes);
 app.use(vehiculoRoutes);
 app.use(ReservasRoutes);
+
+// Convierte la URL del archivo actual a una ruta de archivo
+const __filename = fileURLToPath(import.meta.url);
+// Obtén el directorio del archivo actual
+const __dirname = path.dirname(__filename);
 
 // Ruta para servir archivos estáticos de React
 app.use(express.static(path.join(__dirname, '../client/build')));
