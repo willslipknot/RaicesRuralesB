@@ -83,7 +83,9 @@ export const login = async (req, res) => {
     // Generar token de acceso
     const token = jwt.sign({ id: existingUser.id }, TOKEN_SECRET);
 
-    res.cookie('token', token);
+    // Guardar el token en localStorage
+    localStorage.setItem('token', token);
+
     res.json({
       nombre: existingUser.nombre,
       apellido: existingUser.apellido,
@@ -97,6 +99,7 @@ export const login = async (req, res) => {
     res.status(500).json(["Error al iniciar sesión."]);
   }
 };
+
 
 export const logout = async (req, res) => {
   res.clearCookie('token');
