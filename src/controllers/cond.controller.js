@@ -42,9 +42,10 @@ export const getCond = async (req, res) => {
 
 export const createCond = async (req, res) => {
     const { nombre, apellido, licencia, vehiculo, clase } = req.body;
-    const { filename: foto } = req.file;
+    const { filename: imagen } =req.body;
+    const url = req.body.imageURL;
 
-    if (!foto) {
+    if (!url) {
         return res.status(400).json(["Debes subir una imagen"]);
     }
 
@@ -52,7 +53,7 @@ export const createCond = async (req, res) => {
         const { data: newConductor, error } = await supabase
             .from('conductores')
             .insert([
-                { nombre, apellido, licencia, vehiculo, clase, foto }
+                { nombre, apellido, licencia, vehiculo, clase, imagen:url }
             ]);
 
         if (error) {

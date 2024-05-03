@@ -41,18 +41,23 @@ export const getAct = async (req, res) => {
 };
 
 export const createAct = async (req, res) => {
-    const { nombre, direccion, descripcion, tipo } = req.body;
-    const { filename: imagen } = req.file;
+    const { nombre, descripcion, tipo, coordenadasX, coordenadasY, hora_inicio, hora_fin } = req.body;
+    const { filename: imagen } = req.body;
+    const url = req.body.imageURL;
+    const dep = "Cundinamarca";
+    const mun = "San_Juan";
 
-    if (!imagen) {
-        return res.status(400).json(["Debes subir una imagen"]);
+    console.log("url", url);
+
+    if (!url) {
+        return res.status(400).json({ error: "Debes subir una imagen" });
     }
-
     try {
+        const direccion = `${coordenadasX}, ${coordenadasY}`;
         const { data: newActividad, error } = await supabase
             .from('actividades')
             .insert([
-                { nombre, direccion, descripcion, tipo, imagen }
+                { nombre, direccion, descripcion, tipo, imagen: url, coordenadasX, coordenadasY, hora_inicio, hora_fin, departamento: dep, municipio: mun }
             ]);
 
         if (error) {
@@ -63,9 +68,10 @@ export const createAct = async (req, res) => {
         res.json({ message: "Actividad creada correctamente" });
     } catch (error) {
         console.error(error);
-        res.status(500).json(["Error interno del servidor"]);
+        res.status(500).json({ error: "Error interno del servidor" });
     }
 };
+
 
 export const deleteAct = async (req, res) => {
     try {
@@ -91,6 +97,22 @@ export const deleteAct = async (req, res) => {
 
 export const putAct = async (req, res) => {
     try {
+        const { nombre, descripcion, tipo, coordenadasX, coordenadasY, hora_inicio, hora_fin } = req.body;
+        const { filename: imagen } = req.body;
+        const direccion = `${coordenadasX}, ${coordenadasY}`;
+
+        const url = req.body.imageURL;
+        const dep = "Cundinamarca";
+        const mun = "San_Juan";
+        req.body.departamento = dep;
+        req.body.municipio = mun;
+
+        if (url) {
+            req.body.imagen = url;
+        }
+
+        delete req.body.imageURL;
+
         const { error } = await supabase
             .from('actividades')
             .update(req.body)
@@ -100,7 +122,7 @@ export const putAct = async (req, res) => {
             throw new Error(error.message);
         }
 
-        res.json({ message: "Actividad actualizado exitosamente" });
+        res.json({ message: "Actividad actualizada exitosamente" });
     } catch (error) {
         console.error(error);
         res.status(500).json(["Error interno del servidor"]);

@@ -42,9 +42,10 @@ export const getVehiculo = async (req, res) => {
 
 export const createVehiculo = async (req, res) => {
     const { placa, marca, linea, modelo, cilindrada, color, clase, carroceria, combustible, propietario, identificacion, num_ident } = req.body;
-    const { filename: imagenes } = req.file;
+    const { filename: imagen } =req.body;
+    const url = req.body.imageURL;
 
-    if (!imagenes) {
+    if (!url) {
         return res.status(400).json(["Debes subir una imagen"]);
     }
 
@@ -52,7 +53,7 @@ export const createVehiculo = async (req, res) => {
         const { data: newVehiculo, error } = await supabase
             .from('vehiculos')
             .insert([
-                { placa, marca, linea, modelo, cilindrada, color, clase, carroceria, combustible, propietario, identificacion, num_ident, imagenes }
+                { placa, marca, linea, modelo, cilindrada, color, clase, carroceria, combustible, propietario, identificacion, num_ident, imagen: url }
             ]);
 
         if (error) {
@@ -86,6 +87,7 @@ export const deleteVehiculo = async (req, res) => {
 }
 
 export const putVehiculo = async (req, res) => {
+
     try {
         const { error } = await supabase
             .from('vehiculos')
